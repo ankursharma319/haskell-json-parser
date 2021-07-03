@@ -4,10 +4,9 @@ verbose: 3
 package json-parser-haskell
   tests: True
   run-tests: True
-  benchmarks: False
-  optimization: False
-  profiling: False
+  benchmarks: True
+  optimization: True
+  profiling: True
   coverage: True
   documentation: True
-  ghc-options:
-  - -haddock
+  ghc-options: -haddock

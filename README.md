@@ -18,7 +18,7 @@ nix-shell shell.nix
 cabal v2-build
 
 # To build and run tests
-cabal v2-test
+cabal v2-test --enable-coverage
 
 # Alternative way to run test
 cabal v2-run json-parser-haskell-test

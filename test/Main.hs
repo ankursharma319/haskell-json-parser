@@ -10,10 +10,14 @@ main = do
   defaultMain tests
 
 tests :: TestTree
-tests = testGroup "UnitTests and PropertyTests" [unitTests]
+tests =
+  testGroup
+    "UnitTests and PropertyTests"
+    [ prettyDumpUnitTests
+    ]
 
-unitTests :: TestTree
-unitTests =
+prettyDumpUnitTests :: TestTree
+prettyDumpUnitTests =
   testGroup
     "Unit tests"
     [ mustDumpJsonIntegerPrettily,
@@ -21,40 +25,32 @@ unitTests =
       mustDumpJsonNullPrettily,
       mustDumpJsonStringPrettily,
       mustDumpJsonArrayPrettily,
-      mustDumpJsonObjectPrettily
+      mustDumpJsonObjectPrettily,
+      mustDumpJsonObjectEmbeddedInListPrettily
     ]
 
 mustDumpJsonIntegerPrettily :: TestTree
 mustDumpJsonIntegerPrettily =
-  let testJsonValue = JsonInteger 4
-      expected = "4"
-      got = prettyDump testJsonValue
-   in testCase "should prettyDump Json Integer prettily" $
-        got @?= expected
+  testCase "should prettyDump Json Integer prettily" $
+    prettyDump (JsonInteger 4) @?= "4"
 
 mustDumpJsonBoolPrettily :: TestTree
 mustDumpJsonBoolPrettily =
-  let testJsonValue = JsonBool True
-      expected = "true"
-      got = prettyDump testJsonValue
-   in testCase "should prettyDump Json Bool prettily" $
-        got @?= expected
+  testCase "should prettyDump Json Bool prettily" $
+    prettyDump (JsonBool True) @?= "true"
 
 mustDumpJsonNullPrettily :: TestTree
 mustDumpJsonNullPrettily =
-  let testJsonValue = JsonNull
-      expected = "null"
-      got = prettyDump testJsonValue
-   in testCase "should prettyDump Json Null prettily" $
-        got @?= expected
+  testCase "should prettyDump Json Null prettily" $
+    prettyDump JsonNull @?= "null"
 
 mustDumpJsonStringPrettily :: TestTree
 mustDumpJsonStringPrettily =
-  let testJsonValue = JsonString "some random string"
-      expected = "\"some random string\""
-      got = prettyDump testJsonValue
-   in testCase "should prettyDump Json String prettily" $
-        got @?= expected
+  let 
+    expected = "\"some random string\""
+    got = prettyDump (JsonString "some random string")
+  in testCase "should prettyDump Json String prettily" $
+      got @?= expected
 
 mustDumpJsonArrayPrettily :: TestTree
 mustDumpJsonArrayPrettily =
@@ -68,7 +64,7 @@ mustDumpJsonArrayPrettily =
         "[\n\
         \\tfalse,\n\
         \\t4,\n\
-        \\t\"some random string\",\n\
+        \\t\"some random string\"\n\
         \]"
       got = prettyDump testJsonValue
    in testCase "should prettyDump Json Array prettily" $
@@ -78,7 +74,7 @@ mustDumpJsonObjectPrettily :: TestTree
 mustDumpJsonObjectPrettily =
   let testJsonValue =
         JsonObject
-          [ ("key1", JsonBool False),
+          [ ("key1", JsonBool True),
             ( "key2",
               JsonArray
                 [ JsonInteger 4,
@@ -88,12 +84,41 @@ mustDumpJsonObjectPrettily =
           ]
       expected =
         "{\n\
-        \\t\"key1\": false,\n\
-        \\t\"key2\": [\n\
-        \\t\t4,\n\
-        \\t\t\"another random string\",\n\
-        \\t]\n\
+        \\t\"key1\": true,\n\
+        \\t\"key2\": \n\
+        \\t\t[\n\
+        \\t\t\t4,\n\
+        \\t\t\t\"another random string\"\n\
+        \\t\t]\n\
         \}"
       got = prettyDump testJsonValue
-   in testCase "should prettyDump Json Array prettily" $
+   in testCase "should prettyDump Json Object prettily" $
+        got @?= expected
+
+mustDumpJsonObjectEmbeddedInListPrettily :: TestTree
+mustDumpJsonObjectEmbeddedInListPrettily =
+  let testJsonValue =
+        JsonArray
+          [ JsonObject
+              [ ( "key1",
+                  JsonObject
+                    [ ("key2", JsonArray [JsonString "hello"])
+                    ]
+                )
+              ]
+          ]
+      expected =
+        "[\n\
+        \\t{\n\
+        \\t\t\"key1\": \n\
+        \\t\t\t{\n\
+        \\t\t\t\t\"key2\": \n\
+        \\t\t\t\t\t[\n\
+        \\t\t\t\t\t\t\"hello\"\n\
+        \\t\t\t\t\t]\n\
+        \\t\t\t}\n\
+        \\t}\n\
+        \]"
+      got = prettyDump testJsonValue
+   in testCase "should prettyDump embedded Json Object prettily" $
         got @?= expected
