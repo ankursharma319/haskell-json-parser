@@ -1,0 +1,12 @@
+packages: json-parser-haskell.cabal
+verbose: 3
+
+package json-parser-haskell
+  tests: True
+  run-tests: True
+  benchmarks: False
+  optimization: False
+  profiling: False
+  coverage: True
+  documentation: True
+  ghc-options: -haddock

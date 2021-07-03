@@ -29,5 +29,10 @@ nix-shell --pure -p cabal2nix --run "cabal2nix ." > nix/cabal2nix_generated_deri
 Also update nix derivation via
 
 ```
-cd nix && cabal2nix .. > ./cabal2nix_generated_derivation.nix && cd ..
+cd nix && \
+cabal2nix .. > ./cabal2nix_generated_derivation.nix && \
+cd .. && \
+direnv reload
 ```
+
+

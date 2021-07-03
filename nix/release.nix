@@ -5,7 +5,6 @@
 let
     pkgs = nixpkgs;
 in
-    #pkgs.haskellPackages.callPackage ./cabal2nix_generated_derivation.nix { }
     pkgs.haskell.packages.${compiler}.callPackage ./cabal2nix_generated_derivation.nix { }
 
 # To generate ./cabal2nix_generated_derivation.nix
