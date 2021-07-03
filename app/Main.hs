@@ -1,8 +1,11 @@
-module Main where
+module Main (main) where
 
-import qualified JsonParser (someFunc)
+import Prelude
+import qualified JsonParser ()
 
 main :: IO ()
 main = do
-  putStrLn "Hello, Haskell!"
+  putStrLn "Reading input string from stdin"
+  _contents <- getContents
+  putStrLn "Pretty printing the parsed json: Not Implemented"
 

@@ -1,6 +1,8 @@
 module Main (main) where
 
-import JsonParser
+import Prelude
+
+import JsonParser ()
 
 import Test.Tasty
 import Test.Tasty.HUnit

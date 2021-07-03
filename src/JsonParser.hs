@@ -1,4 +1,13 @@
-module JsonParser (someFunc) where
+module JsonParser (JsonValue(..), prettyPrint) where
 
-someFunc :: IO ()
-someFunc = putStrLn "someFunc"
+import Prelude
+
+data JsonValue
+  = JsonNull
+  | JsonBool Bool
+  | JsonInteger Int
+  | JsonString String
+
+
+prettyPrint :: String -> String
+prettyPrint _inputJsonString = undefined

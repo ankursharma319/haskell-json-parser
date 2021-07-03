@@ -21,7 +21,82 @@ extra-source-files:
     CHANGELOG.md
     README.md
 
+common common-exe-options
+    ghc-options:-threaded
+                -O2
+                -Wall
+                -Werror
+                -Wno-missed-extra-shared-lib
+                -Wno-missing-exported-signatures 
+                -Wno-missing-import-lists
+                -Wno-missed-specialisations
+                -Wno-all-missed-specialisations
+                -Wno-unsafe
+                -Wno-safe
+                -Wno-missing-local-signatures
+                -Wno-monomorphism-restriction
+                -Wno-missing-safe-haskell-mode
+                -Wno-prepositive-qualified-module
+
+common common-deriving-options
+  if impl(ghc >= 8.8)
+    ghc-options:       -Wmissing-deriving-strategies
+                       -Werror=missing-deriving-strategies
+
+  default-extensions:  DeriveAnyClass
+                       DeriveDataTypeable
+                       DeriveFoldable
+                       DeriveFunctor
+                       DeriveGeneric
+                       DeriveLift
+                       DeriveTraversable
+                       DerivingStrategies
+                       DerivingVia
+                       GeneralizedNewtypeDeriving
+common common-rio-options
+  default-language: Haskell2010
+  ghc-options: -O2 -Wall -Werror -Wno-missed-extra-shared-lib
+  default-extensions:
+      BangPatterns
+      BinaryLiterals
+      ConstraintKinds
+      DataKinds
+      DefaultSignatures
+      DeriveDataTypeable
+      DeriveFoldable
+      DeriveFunctor
+      DeriveGeneric
+      DeriveTraversable
+      DoAndIfThenElse
+      EmptyDataDecls
+      ExistentialQuantification
+      FlexibleContexts
+      FlexibleInstances
+      FunctionalDependencies
+      GADTs
+      GeneralizedNewtypeDeriving
+      InstanceSigs
+      KindSignatures
+      LambdaCase
+      MultiParamTypeClasses
+      MultiWayIf
+      NamedFieldPuns
+      NoImplicitPrelude
+      OverloadedStrings
+      PartialTypeSignatures
+      PatternGuards
+      PolyKinds
+      RankNTypes
+      RecordWildCards
+      ScopedTypeVariables
+      StandaloneDeriving
+      TupleSections
+      TypeFamilies
+      TypeSynonymInstances
+      ViewPatterns
+
 library
+    import: common-deriving-options, common-rio-options
     exposed-modules:  JsonParser
 
     -- Modules included in this library but not exported.
@@ -34,6 +109,7 @@ library
     default-language: Haskell2010
 
 executable json-parser-haskell
+    import: common-deriving-options, common-rio-options, common-exe-options
     main-is:          Main.hs
 
     -- Modules included in this executable, other than Main.
@@ -49,10 +125,11 @@ executable json-parser-haskell
     default-language: Haskell2010
 
 test-suite json-parser-haskell-test
+    import: common-deriving-options, common-rio-options, common-exe-options
     default-language: Haskell2010
     type:             exitcode-stdio-1.0
     hs-source-dirs:   test
-    main-is:          JsonParserTest.hs
+    main-is:          Main.hs
     build-depends:    base ^>=4.14.1.0
                     , tasty
                     , tasty-hunit

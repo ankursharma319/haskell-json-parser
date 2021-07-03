@@ -1,4 +1,4 @@
-packages: json-parser-haskell.cabal
+packages: .
 verbose: 3
 
 package json-parser-haskell
@@ -9,4 +9,5 @@ package json-parser-haskell
   profiling: False
   coverage: True
   documentation: True
-  ghc-options: -haddock
+  ghc-options:
+  - -haddock
