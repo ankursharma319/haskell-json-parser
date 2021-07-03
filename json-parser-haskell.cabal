@@ -98,6 +98,7 @@ common common-rio-options
 library
     import: common-deriving-options, common-rio-options
     exposed-modules:  JsonParser
+                    , PrettyJsonDumper
 
     -- Modules included in this library but not exported.
     -- other-modules:

@@ -1,8 +1,10 @@
 module Main (main) where
 
-import JsonParser (JsonValue (..), PrettyDumpable (..))
-import Test.Tasty
-import Test.Tasty.HUnit
+import JsonParser (JsonValue (..))
+import PrettyJsonDumper ( prettyDump )
+
+import Test.Tasty ( testGroup, defaultMain, TestTree )
+import Test.Tasty.HUnit ( (@?=), testCase )
 import Prelude
 
 main :: IO ()
