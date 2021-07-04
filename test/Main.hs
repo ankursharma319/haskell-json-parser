@@ -1,10 +1,9 @@
 module Main (main) where
 
-import JsonParser (JsonValue (..))
-import PrettyJsonDumper ( prettyDump )
-
-import Test.Tasty ( testGroup, defaultMain, TestTree )
-import Test.Tasty.HUnit ( (@?=), testCase )
+import JsonParser (JsonValue (..), Parser (runParser), jsonValueParser)
+import PrettyJsonDumper (prettyDump)
+import Test.Tasty (TestTree, defaultMain, testGroup)
+import Test.Tasty.HUnit (testCase, (@?=))
 import Prelude
 
 main :: IO ()
@@ -15,13 +14,35 @@ tests :: TestTree
 tests =
   testGroup
     "UnitTests and PropertyTests"
-    [ prettyDumpUnitTests
+    [ prettyDumpUnitTests,
+      parsingUnitTests
     ]
+
+parsingUnitTests :: TestTree
+parsingUnitTests =
+  testGroup
+    "Json Parser Unit tests"
+    [ mustParseJsonNullCorrectly,
+      mustParseJsonBoolCorrectly
+    ]
+
+mustParseJsonNullCorrectly :: TestTree
+mustParseJsonNullCorrectly =
+  testCase "should parse null correctly" $ do
+    runParser jsonValueParser "null" @?= Just ("", JsonNull)
+    runParser jsonValueParser "notnull" @?= Nothing
+
+mustParseJsonBoolCorrectly :: TestTree
+mustParseJsonBoolCorrectly =
+  testCase "should parse boolean correctly" $ do
+    runParser jsonValueParser "false" @?= Just ("", JsonBool False)
+    runParser jsonValueParser "true" @?= Just ("", JsonBool True)
+    runParser jsonValueParser "some" @?= Nothing
 
 prettyDumpUnitTests :: TestTree
 prettyDumpUnitTests =
   testGroup
-    "Unit tests"
+    "Pretty Json Dumper Unit tests"
     [ mustDumpJsonIntegerPrettily,
       mustDumpJsonBoolPrettily,
       mustDumpJsonNullPrettily,
@@ -48,11 +69,10 @@ mustDumpJsonNullPrettily =
 
 mustDumpJsonStringPrettily :: TestTree
 mustDumpJsonStringPrettily =
-  let 
-    expected = "\"some random string\""
-    got = prettyDump (JsonString "some random string")
-  in testCase "should prettyDump Json String prettily" $
-      got @?= expected
+  let expected = "\"some random string\""
+      got = prettyDump (JsonString "some random string")
+   in testCase "should prettyDump Json String prettily" $
+        got @?= expected
 
 mustDumpJsonArrayPrettily :: TestTree
 mustDumpJsonArrayPrettily =
