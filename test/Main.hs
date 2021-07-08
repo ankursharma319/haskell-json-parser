@@ -23,7 +23,11 @@ parsingUnitTests =
   testGroup
     "Json Parser Unit tests"
     [ mustParseJsonNullCorrectly,
-      mustParseJsonBoolCorrectly
+      mustParseJsonBoolCorrectly,
+      mustParseJsonIntegerCorrectly,
+      mustParseJsonStringCorrectly,
+      mustParseJsonArrayCorrectly,
+      mustParseJsonObjectsCorrectly
     ]
 
 mustParseJsonNullCorrectly :: TestTree
@@ -38,6 +42,42 @@ mustParseJsonBoolCorrectly =
     runParser jsonValueParser "false" @?= Just ("", JsonBool False)
     runParser jsonValueParser "true" @?= Just ("", JsonBool True)
     runParser jsonValueParser "some" @?= Nothing
+
+mustParseJsonIntegerCorrectly :: TestTree
+mustParseJsonIntegerCorrectly =
+  testCase "should parse integers correctly" $ do
+    runParser jsonValueParser "109" @?= Just ("", JsonInteger 109)
+    runParser jsonValueParser "-5" @?= Just ("", JsonInteger (-5))
+    runParser jsonValueParser "5.456" @?= Nothing
+
+
+mustParseJsonStringCorrectly :: TestTree
+mustParseJsonStringCorrectly =
+  testCase "should parse strings correctly" $ do
+    runParser jsonValueParser "\"hello world\"" @?= Just ("", JsonString "hello world")
+    runParser jsonValueParser "\"some 456 value\"" @?= Just ("", JsonString "some 456 value")
+    runParser jsonValueParser "\"\"" @?= Just ("", JsonString "")
+    runParser jsonValueParser "hello world" @?= Nothing
+
+mustParseJsonArrayCorrectly :: TestTree
+mustParseJsonArrayCorrectly =
+  testCase "should parse arrays correctly" $ do
+    runParser jsonValueParser "[]" @?= Just ("", JsonArray [])
+    runParser jsonValueParser "[1, \"x\"]" @?= Just ("", JsonArray [JsonInteger 1, JsonString "x"])
+    runParser jsonValueParser "[1 [null, true, []]]" @?= Just ("", JsonArray [JsonNull, JsonBool True, JsonArray [] ])
+    runParser jsonValueParser "[1" @?= Nothing
+    runParser jsonValueParser "[\"x\":3]" @?= Nothing
+    runParser jsonValueParser "[1,]" @?= Nothing
+
+mustParseJsonObjectsCorrectly :: TestTree
+mustParseJsonObjectsCorrectly =
+  testCase "should parse arrays correctly" $ do
+    runParser jsonValueParser "{}" @?= Just ("", JsonObject [])
+    runParser jsonValueParser "{\"key1\":1, \"key2\":null]" @?= Just ("", JsonObject [("key1", JsonInteger 1), ("key2", JsonNull)])
+    runParser jsonValueParser "{\"key1\":[], \"key2\":{\"key3\":false}]" @?= Just ("", JsonObject [("key1", JsonArray []), ("key2", JsonObject [("key3", JsonBool False)])])
+    runParser jsonValueParser "{1,2}" @?= Nothing
+    runParser jsonValueParser "{\"x\":1,}" @?= Nothing
+    runParser jsonValueParser "{x:1}" @?= Nothing
 
 prettyDumpUnitTests :: TestTree
 prettyDumpUnitTests =
