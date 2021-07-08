@@ -6,6 +6,7 @@ module JsonParser where
 )-}
 
 import Control.Applicative
+import Data.Char
 import Prelude
 
 data JsonValue
@@ -102,6 +103,54 @@ jsonBoolParser = fmap convertStringToJsonBool (trueStringParser <|> falseStringP
     falseStringParser = stringP "false"
 
 {-
+this function is analogous to span in Prelude
+
+span :: (a->Bool) -> [a] -> ([a], [a])
+>span isDigit "234hello123world"
+("234","hello123world")
+
+>runParser (spanP isDigit) "123hello345"
+Just ("hello345","123")
+-}
+spanP :: (Char -> Bool) -> Parser String
+spanP predicate = Parser runParseFunc where
+    runParseFunc :: String -> Maybe (String, String)
+    runParseFunc input = 
+      let
+        (token, rest) = span predicate input
+      in
+        Just (rest, token)
+
+jsonIntegerParser :: Parser JsonValue
+jsonIntegerParser = x where
+  p :: Parser String
+  p = notNull $ spanP isDigit
+  -- Need to go from Parser String -> Parser JsonValue
+  -- This is job of fmap
+  -- Use read to convert from String to Integers
+  x :: Parser JsonValue
+  x = fmap (JsonInteger . read) p
+
+{-
+If initial parser returns empty list, convert it into a failed parse
+
+e.g.-
+>runParser (spanP isDigit) ""
+Just ("","")
+>runParser (notNull $ spanP isDigit) ""
+Nothing
+-}
+notNull :: forall a. Parser [a] -> Parser [a]
+notNull p = Parser runParseFunc where
+  runParseFunc :: String -> Maybe (String, [a])
+  runParseFunc input = do
+    (remaining, x) <- runParser p input
+    if null x
+      then Nothing
+    else
+      Just (remaining, x)
+
+{- 
 z = charP 'x'
 _ = runParser z "xhello" == Just ("hello",'x')
 _ = runParser z "hellonull" == Nothing
@@ -124,4 +173,4 @@ stringP :: String -> Parser String
 stringP = traverse charP
 
 jsonValueParser :: Parser JsonValue
-jsonValueParser = jsonNullParser <|> jsonBoolParser
+jsonValueParser = jsonNullParser <|> jsonBoolParser <|> jsonIntegerParser
