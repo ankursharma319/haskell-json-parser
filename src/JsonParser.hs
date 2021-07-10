@@ -132,6 +132,26 @@ jsonIntegerParser = x where
   x = fmap (JsonInteger . read) p
 
 {-
+Doesnt support escaping yet
+Matches til it encounters quote character "
+
+>runParser stringLiteral "xsf\"abc"
+Just ("\"abc","xsf")
+-}
+stringLiteral :: Parser String
+stringLiteral = spanP (/= '"')
+
+{-
+*> discards thing to left and only returns the thing on the right IF neither is not Nothingish
+
+>runParser jsonStringParser "\"xsf\"abc"
+Just ("abc",JsonString "xsf")
+
+-}
+jsonStringParser :: Parser JsonValue
+jsonStringParser = fmap JsonString $ charP '"' *> stringLiteral <* charP '"'
+
+{-
 If initial parser returns empty list, convert it into a failed parse
 
 e.g.-
@@ -149,6 +169,30 @@ notNull p = Parser runParseFunc where
       then Nothing
     else
       Just (remaining, x)
+
+_notNullDesugared1 :: forall a. Parser [a] -> Parser [a]
+_notNullDesugared1 p = Parser runParseFunc where
+  runParseFunc :: String -> Maybe (String, [a])
+  runParseFunc input =
+    runParser p input >>= (\(remaining,x) ->
+      if null x
+        then Nothing 
+      else
+        Just (remaining, x)
+    )
+
+
+_notNullDesugared2 :: forall a. Parser [a] -> Parser [a]
+_notNullDesugared2 p = Parser runParseFunc where
+  runParseFunc :: String -> Maybe (String, [a])
+  runParseFunc input =
+    case runParser p input of 
+      Just (remaining,x) ->
+        if null x
+          then Nothing 
+        else
+          Just (remaining, x)
+      Nothing -> Nothing
 
 {- 
 z = charP 'x'
@@ -173,4 +217,4 @@ stringP :: String -> Parser String
 stringP = traverse charP
 
 jsonValueParser :: Parser JsonValue
-jsonValueParser = jsonNullParser <|> jsonBoolParser <|> jsonIntegerParser
+jsonValueParser = jsonNullParser <|> jsonBoolParser <|> jsonIntegerParser <|> jsonStringParser

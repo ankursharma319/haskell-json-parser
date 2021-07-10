@@ -71,7 +71,7 @@ mustParseJsonArrayCorrectly =
 
 mustParseJsonObjectsCorrectly :: TestTree
 mustParseJsonObjectsCorrectly =
-  testCase "should parse arrays correctly" $ do
+  testCase "should parse objects correctly" $ do
     runParser jsonValueParser "{}" @?= Just ("", JsonObject [])
     runParser jsonValueParser "{\"key1\":1, \"key2\":null]" @?= Just ("", JsonObject [("key1", JsonInteger 1), ("key2", JsonNull)])
     runParser jsonValueParser "{\"key1\":[], \"key2\":{\"key3\":false}]" @?= Just ("", JsonObject [("key1", JsonArray []), ("key2", JsonObject [("key3", JsonBool False)])])
