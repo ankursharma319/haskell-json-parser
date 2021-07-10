@@ -64,7 +64,7 @@ mustParseJsonArrayCorrectly =
   testCase "should parse arrays correctly" $ do
     runParser jsonValueParser "[]" @?= Just ("", JsonArray [])
     runParser jsonValueParser "[1, \"x\"]" @?= Just ("", JsonArray [JsonInteger 1, JsonString "x"])
-    runParser jsonValueParser "[1 [null, true, []]]" @?= Just ("", JsonArray [JsonNull, JsonBool True, JsonArray [] ])
+    runParser jsonValueParser "[1, [null, true, []]]" @?= Just ("", JsonArray [JsonInteger 1, JsonArray [JsonNull, JsonBool True, JsonArray [] ]])
     runParser jsonValueParser "[1" @?= Nothing
     runParser jsonValueParser "[\"x\":3]" @?= Nothing
     runParser jsonValueParser "[1,]" @?= Nothing

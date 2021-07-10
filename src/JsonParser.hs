@@ -113,23 +113,23 @@ span :: (a->Bool) -> [a] -> ([a], [a])
 Just ("hello345","123")
 -}
 spanP :: (Char -> Bool) -> Parser String
-spanP predicate = Parser runParseFunc where
+spanP predicate = Parser runParseFunc
+  where
     runParseFunc :: String -> Maybe (String, String)
-    runParseFunc input = 
-      let
-        (token, rest) = span predicate input
-      in
-        Just (rest, token)
+    runParseFunc input =
+      let (token, rest) = span predicate input
+       in Just (rest, token)
 
 jsonIntegerParser :: Parser JsonValue
-jsonIntegerParser = x where
-  p :: Parser String
-  p = notNull $ spanP isDigit
-  -- Need to go from Parser String -> Parser JsonValue
-  -- This is job of fmap
-  -- Use read to convert from String to Integers
-  x :: Parser JsonValue
-  x = fmap (JsonInteger . read) p
+jsonIntegerParser = x
+  where
+    p :: Parser String
+    p = notNull $ spanP isDigit
+    -- Need to go from Parser String -> Parser JsonValue
+    -- This is job of fmap
+    -- Use read to convert from String to Integers
+    x :: Parser JsonValue
+    x = fmap (JsonInteger . read) p
 
 {-
 Doesnt support escaping yet
@@ -161,40 +161,40 @@ Just ("","")
 Nothing
 -}
 notNull :: forall a. Parser [a] -> Parser [a]
-notNull p = Parser runParseFunc where
-  runParseFunc :: String -> Maybe (String, [a])
-  runParseFunc input = do
-    (remaining, x) <- runParser p input
-    if null x
-      then Nothing
-    else
-      Just (remaining, x)
+notNull p = Parser runParseFunc
+  where
+    runParseFunc :: String -> Maybe (String, [a])
+    runParseFunc input = do
+      (remaining, x) <- runParser p input
+      if null x
+        then Nothing
+        else Just (remaining, x)
 
 _notNullDesugared1 :: forall a. Parser [a] -> Parser [a]
-_notNullDesugared1 p = Parser runParseFunc where
-  runParseFunc :: String -> Maybe (String, [a])
-  runParseFunc input =
-    runParser p input >>= (\(remaining,x) ->
-      if null x
-        then Nothing 
-      else
-        Just (remaining, x)
-    )
-
+_notNullDesugared1 p = Parser runParseFunc
+  where
+    runParseFunc :: String -> Maybe (String, [a])
+    runParseFunc input =
+      runParser p input
+        >>= ( \(remaining, x) ->
+                if null x
+                  then Nothing
+                  else Just (remaining, x)
+            )
 
 _notNullDesugared2 :: forall a. Parser [a] -> Parser [a]
-_notNullDesugared2 p = Parser runParseFunc where
-  runParseFunc :: String -> Maybe (String, [a])
-  runParseFunc input =
-    case runParser p input of 
-      Just (remaining,x) ->
-        if null x
-          then Nothing 
-        else
-          Just (remaining, x)
-      Nothing -> Nothing
+_notNullDesugared2 p = Parser runParseFunc
+  where
+    runParseFunc :: String -> Maybe (String, [a])
+    runParseFunc input =
+      case runParser p input of
+        Just (remaining, x) ->
+          if null x
+            then Nothing
+            else Just (remaining, x)
+        Nothing -> Nothing
 
-{- 
+{-
 z = charP 'x'
 _ = runParser z "xhello" == Just ("hello",'x')
 _ = runParser z "hellonull" == Nothing
@@ -216,5 +216,97 @@ _ = runParser z "hellonull" == Nothing
 stringP :: String -> Parser String
 stringP = traverse charP
 
+{-
+>runParser whitespaceIgnorerParser "   hello world"
+Just ("hello world","   ")
+-}
+whitespaceIgnorerParser :: Parser String
+whitespaceIgnorerParser = spanP isSpace
+
+{-
+>runParser (sepBy (charP ',') (jsonBoolParser)) ",true,false"
+Nothing
+>runParser (sepBy (charP ',') (jsonBoolParser)) "true,false"
+Just ("",[JsonBool True,JsonBool False])
+-}
+sepBy :: forall a b. Parser a -> Parser b -> Parser [b]
+sepBy sep element = finalParserWhichDoesntReturnNothingForEmptyLists
+  where
+    {-
+    >runParser jsonNullParser "nullnullnull"
+    Just ("nullnull",JsonNull)
+    >
+    >runParser (many jsonNullParser) "nullnullnull"
+    Just ("",[JsonNull,JsonNull,JsonNull])
+
+    many applies as long as it can and once it
+    fails (alternative is empty) it stops
+    -}
+
+    {-
+    >_1 = (charP ',') *> (stringP "hello")
+    >runParser _1 ",hello"
+    Just ("","hello")
+    >runParser _1 ",h"
+    Nothing
+    -}
+    parserSingleSepCombinedElement :: Parser b
+    parserSingleSepCombinedElement = sep *> element
+
+    {-
+    >runParser (many _1) ",hello"
+    Just ("",["hello"])
+    >runParser (many _1) ",hello,hello,hello"
+    Just ("",["hello","hello","hello"])
+    -}
+    parserManySepCombinedElementElements :: Parser [b]
+    parserManySepCombinedElementElements = many parserSingleSepCombinedElement
+
+    parserFirstElementWithoutSeparator :: Parser b
+    parserFirstElementWithoutSeparator = element
+
+    -- (:) :: b -> [b] -> [b]
+    -- element :: Parser b
+    parserWhichWrapsFuncForAppendingFirstElementPartserToRestOfParsers :: Parser ([b] -> [b])
+    parserWhichWrapsFuncForAppendingFirstElementPartserToRestOfParsers =
+      fmap (:) parserFirstElementWithoutSeparator
+
+    parserAllElems :: Parser [b]
+    parserAllElems =
+      parserWhichWrapsFuncForAppendingFirstElementPartserToRestOfParsers
+        <*> parserManySepCombinedElementElements
+
+    emptinessParser :: Parser [b]
+    emptinessParser = Parser runParseFunc
+      where
+        runParseFunc :: String -> Maybe (String, [b])
+        runParseFunc input =
+          if not (null input) && head input == ']'
+            then Just (input, [])
+            else Nothing
+
+    finalParserWhichDoesntReturnNothingForEmptyLists :: Parser [b]
+    finalParserWhichDoesntReturnNothingForEmptyLists =
+      emptinessParser <|> parserAllElems
+
+jsonArrayParser :: Parser JsonValue
+jsonArrayParser = fmap JsonArray arrayParser
+  where
+    arrayParser :: Parser [JsonValue]
+    arrayParser =
+      charP '[' *> whitespaceIgnorerParser
+        *> elementsParser
+          <* whitespaceIgnorerParser
+          <* charP ']'
+    elementsParser :: Parser [JsonValue]
+    elementsParser = sepBy sepParser jsonValueParser
+      where
+        sepParser = whitespaceIgnorerParser *> charP ',' <* whitespaceIgnorerParser
+
 jsonValueParser :: Parser JsonValue
-jsonValueParser = jsonNullParser <|> jsonBoolParser <|> jsonIntegerParser <|> jsonStringParser
+jsonValueParser =
+  jsonNullParser
+    <|> jsonBoolParser
+    <|> jsonIntegerParser
+    <|> jsonStringParser
+    <|> jsonArrayParser
